@@ -459,152 +459,152 @@
       }
 
       const vertexShaderWGSL = `@group(0) @binding(0) var<uniform> sceneUniform: mat4x4<f32>;
-      @group(0) @binding(1) var<uniform> modelMatrix: mat4x4<f32>;
-      @group(0) @binding(2) var<uniform> normalMatrix: mat4x4<f32>;
+            @group(0) @binding(1) var<uniform> modelMatrix: mat4x4<f32>;
+            @group(0) @binding(2) var<uniform> normalMatrix: mat4x4<f32>;
 
-      struct VertexInput {
-        @location(0) position: vec3<f32>,
-        @location(1) normal: vec3<f32>,
-        @location(2) uv: vec2<f32>,
-        @location(3) tangent: vec3<f32>,
-        @location(4) bitangent: vec3<f32>,
-      };
+            struct VertexInput {
+              @location(0) position: vec3<f32>,
+              @location(1) normal: vec3<f32>,
+              @location(2) uv: vec2<f32>,
+              @location(3) tangent: vec3<f32>,
+              @location(4) bitangent: vec3<f32>,
+            };
 
-      struct VertexOutput {
-        @builtin(position) position: vec4<f32>,
-        @location(0) fragPos: vec3<f32>,
-        @location(1) normal: vec3<f32>,
-        @location(2) uv: vec2<f32>,
-        @location(3) tangent: vec3<f32>,
-        @location(4) bitangent: vec3<f32>,
-      };
+            struct VertexOutput {
+              @builtin(position) position: vec4<f32>,
+              @location(0) fragPos: vec3<f32>,
+              @location(1) normal: vec3<f32>,
+              @location(2) uv: vec2<f32>,
+              @location(3) tangent: vec3<f32>,
+              @location(4) bitangent: vec3<f32>,
+            };
 
-      @vertex
-      fn main(input: VertexInput) -> VertexOutput {
-        var output: VertexOutput;
-        let worldPos = modelMatrix * vec4<f32>(input.position, 1.0);
-        output.position = sceneUniform * worldPos;
-        output.fragPos = worldPos.xyz;
+            @vertex
+            fn main(input: VertexInput) -> VertexOutput {
+              var output: VertexOutput;
+              let worldPos = modelMatrix * vec4<f32>(input.position, 1.0);
+              output.position = sceneUniform * worldPos;
+              output.fragPos = worldPos.xyz;
 
-        output.normal = normalize((normalMatrix * vec4<f32>(input.normal, 0.0)).xyz);
-        output.tangent = normalize((modelMatrix * vec4<f32>(input.tangent, 0.0)).xyz);
-        output.bitangent = normalize((modelMatrix * vec4<f32>(input.bitangent, 0.0)).xyz);
+              output.normal = normalize((normalMatrix * vec4<f32>(input.normal, 0.0)).xyz);
+              output.tangent = normalize((modelMatrix * vec4<f32>(input.tangent, 0.0)).xyz);
+              output.bitangent = normalize((modelMatrix * vec4<f32>(input.bitangent, 0.0)).xyz);
 
-        output.uv = input.uv;
-        return output;
-      }`;
+              output.uv = input.uv;
+              return output;
+            }`;
 
       const fragmentShaderWGSL = `
-      @group(0) @binding(3) var<uniform> lightDirection: vec3<f32>;
-      @group(0) @binding(4) var colorTex: texture_2d<f32>;
-      @group(0) @binding(5) var etcTex: texture_2d<f32>;
-      @group(0) @binding(6) var normalTex: texture_2d<f32>;
-      @group(0) @binding(7) var mySampler: sampler;
-      @group(0) @binding(8) var<uniform> partUniform: u32;
+            @group(0) @binding(3) var<uniform> lightDirection: vec3<f32>;
+            @group(0) @binding(4) var colorTex: texture_2d<f32>;
+            @group(0) @binding(5) var etcTex: texture_2d<f32>;
+            @group(0) @binding(6) var normalTex: texture_2d<f32>;
+            @group(0) @binding(7) var mySampler: sampler;
+            @group(0) @binding(8) var<uniform> partUniform: u32;
 
-      const PI = 3.14159265359;
+            const PI = 3.14159265359;
 
-      fn fresnelSchlick(cosTheta: f32, F0: vec3<f32>) -> vec3<f32> {
-        return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
-      }
+            fn fresnelSchlick(cosTheta: f32, F0: vec3<f32>) -> vec3<f32> {
+              return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+            }
 
-      fn ndfGGX(N: vec3<f32>, H: vec3<f32>, roughness: f32) -> f32 {
-        let a = roughness * roughness;
-        let a2 = a * a;
-        let NdotH = max(dot(N, H), 0.0);
-        let NdotH2 = NdotH * NdotH;
-        let denom = NdotH2 * (a2 - 1.0) + 1.0;
-        return a2 / (PI * denom * denom);
-      }
+            fn ndfGGX(N: vec3<f32>, H: vec3<f32>, roughness: f32) -> f32 {
+              let a = roughness * roughness;
+              let a2 = a * a;
+              let NdotH = max(dot(N, H), 0.0);
+              let NdotH2 = NdotH * NdotH;
+              let denom = NdotH2 * (a2 - 1.0) + 1.0;
+              return a2 / (PI * denom * denom);
+            }
 
-      fn geometrySmith(N: vec3<f32>, V: vec3<f32>, L: vec3<f32>, roughness: f32) -> f32 {
-        let k = (roughness + 1.0)*(roughness + 1.0)/8.0;
-        let NdotV = max(dot(N,V),0.0);
-        let NdotL = max(dot(N,L),0.0);
-        let G1V = NdotV/(NdotV*(1.0-k)+k);
-        let G1L = NdotL/(NdotL*(1.0-k)+k);
-        return G1V * G1L;
-      }
+            fn geometrySmith(N: vec3<f32>, V: vec3<f32>, L: vec3<f32>, roughness: f32) -> f32 {
+              let k = (roughness + 1.0)*(roughness + 1.0)/8.0;
+              let NdotV = max(dot(N,V),0.0);
+              let NdotL = max(dot(N,L),0.0);
+              let G1V = NdotV/(NdotV*(1.0-k)+k);
+              let G1L = NdotL/(NdotL*(1.0-k)+k);
+              return G1V * G1L;
+            }
 
-      struct VertexOutput {
-        @builtin(position) position: vec4<f32>,
-        @location(0) fragPos: vec3<f32>,
-        @location(1) normal: vec3<f32>,
-        @location(2) uv: vec2<f32>,
-        @location(3) tangent: vec3<f32>,
-        @location(4) bitangent: vec3<f32>,
-      };
+            struct VertexOutput {
+              @builtin(position) position: vec4<f32>,
+              @location(0) fragPos: vec3<f32>,
+              @location(1) normal: vec3<f32>,
+              @location(2) uv: vec2<f32>,
+              @location(3) tangent: vec3<f32>,
+              @location(4) bitangent: vec3<f32>,
+            };
 
-      @fragment
-      fn main(input: VertexOutput)->@location(0) vec4<f32> {
-        let baseColor_srgb = textureSample(colorTex,mySampler,input.uv).rgb;
-        var baseColor = pow(baseColor_srgb, vec3<f32>(2.2));
+            @fragment
+            fn main(input: VertexOutput)->@location(0) vec4<f32> {
+              let baseColor_srgb = textureSample(colorTex,mySampler,input.uv).rgb;
+              var baseColor = pow(baseColor_srgb, vec3<f32>(2.2));
 
-        let etcColor = textureSample(etcTex,mySampler,input.uv);
-        let AO = etcColor.r;
-        var roughness = etcColor.g;
-        var metallic = etcColor.b;
+              let etcColor = textureSample(etcTex,mySampler,input.uv);
+              let AO = etcColor.r;
+              var roughness = etcColor.g;
+              var metallic = etcColor.b;
 
-        let normalSample = textureSample(normalTex, mySampler, input.uv).rgb;
-        let N_map = normalSample * 2.0 - 1.0;
-        let tangentNormal = normalize(-N_map);
+              let normalSample = textureSample(normalTex, mySampler, input.uv).rgb;
+              let N_map = normalSample * 2.0 - 1.0;
+              let tangentNormal = normalize(-N_map);
 
-        let T = normalize(input.tangent);
-        let B = normalize(input.bitangent);
-        let N = normalize(input.normal);
-        let TBN = mat3x3<f32>(T, B, N);
+              let T = normalize(input.tangent);
+              let B = normalize(input.bitangent);
+              let N = normalize(input.normal);
+              let TBN = mat3x3<f32>(T, B, N);
 
-        let worldNormal = normalize(TBN * tangentNormal);
+              let worldNormal = normalize(TBN * tangentNormal);
 
-        if (partUniform == 2u) {
-          metallic = 0.1;
-          roughness = 0.05;
-          baseColor = vec3<f32>(0.38, 0.37, 0.36);
+              if (partUniform == 2u) {
+                metallic = 0.1;
+                roughness = 0.05;
+                baseColor = vec3<f32>(0.38, 0.37, 0.36);
 
 
-          // rustMask를 g채널에서 추출 (0~1)
-          let rustMask = textureSample(etcTex, mySampler, input.uv).g;
+                // rustMask를 g채널에서 추출 (0~1)
+                let rustMask = textureSample(etcTex, mySampler, input.uv).g;
 
-          // AO 기반으로 녹 섞기 (AO 낮을수록 녹심)
-          let rustFactorAO = smoothstep(0.1, 0.5, AO);
+                // AO 기반으로 녹 섞기 (AO 낮을수록 녹심)
+                let rustFactorAO = smoothstep(0.1, 0.5, AO);
 
-          let noise = 0.5 + 0.5*sin(input.uv.x*50.0 + input.uv.y*50.0);
-          let combinedRustFactor = rustMask * rustFactorAO;
+                let noise = 0.5 + 0.5*sin(input.uv.x*50.0 + input.uv.y*50.0);
+                let combinedRustFactor = rustMask * rustFactorAO;
 
-          let rustColor = vec3<f32>(0.02, 0.01, 0.005);
-          baseColor = mix(baseColor, rustColor, combinedRustFactor);
+                let rustColor = vec3<f32>(0.02, 0.01, 0.005);
+                baseColor = mix(baseColor, rustColor, combinedRustFactor);
 
-          // 녹 부분은 금속성 줄이고 더 거칠게
-          metallic = mix(metallic, 0.0, combinedRustFactor);
-          roughness = mix(roughness, 0.85, combinedRustFactor);
-        }
+                // 녹 부분은 금속성 줄이고 더 거칠게
+                metallic = mix(metallic, 0.0, combinedRustFactor);
+                roughness = mix(roughness, 0.85, combinedRustFactor);
+              }
 
-        let L = normalize(-lightDirection);
-        let V = normalize(-input.fragPos);
-        let H = normalize(L + V);
+              let L = normalize(-lightDirection);
+              let V = normalize(-input.fragPos);
+              let H = normalize(L + V);
 
-        let NdotV = max(dot(worldNormal, V),0.0);
-        let NdotL = max(dot(worldNormal, L),0.0);
+              let NdotV = max(dot(worldNormal, V),0.0);
+              let NdotL = max(dot(worldNormal, L),0.0);
 
-        let NDF = ndfGGX(worldNormal, H, roughness);
-        let G = geometrySmith(worldNormal, V, L, roughness);
-        let F0 = mix(vec3<f32>(0.04,0.04,0.04), baseColor, metallic);
-        let F = fresnelSchlick(max(dot(H, V),0.0), F0);
+              let NDF = ndfGGX(worldNormal, H, roughness);
+              let G = geometrySmith(worldNormal, V, L, roughness);
+              let F0 = mix(vec3<f32>(0.04,0.04,0.04), baseColor, metallic);
+              let F = fresnelSchlick(max(dot(H, V),0.0), F0);
 
-        let kS = F * (NDF * G) / (4.0 * NdotV * NdotL + 0.001);
-        let kD = (vec3<f32>(1.0)-F)*(1.0-metallic);
+              let kS = F * (NDF * G) / (4.0 * NdotV * NdotL + 0.001);
+              let kD = (vec3<f32>(1.0)-F)*(1.0-metallic);
 
-        let diffuse = NdotL * baseColor;
-        let ambientIntensity = 0.0001;
-        let ambient = AO * AO * vec3<f32>(ambientIntensity, ambientIntensity, ambientIntensity);
+              let diffuse = NdotL * baseColor;
+              let ambientIntensity = 0.0001;
+              let ambient = AO * AO * vec3<f32>(ambientIntensity, ambientIntensity, ambientIntensity);
 
-        var finalColor = ambient + kD*diffuse + kS;
+              var finalColor = ambient + kD*diffuse + kS;
 
-        let gamma = 2.2;
-        finalColor = pow(finalColor, vec3<f32>(1.0/gamma));
-        return vec4<f32>(finalColor, 1.0);
-      }
-      `;
+              let gamma = 2.2;
+              finalColor = pow(finalColor, vec3<f32>(1.0/gamma));
+              return vec4<f32>(finalColor, 1.0);
+            }
+            `;
 
       function createRenderPipeline(
         device,
@@ -665,24 +665,23 @@
         });
       }
 
-      let shellLaunched = false;
-      let shellPaused = false;
-      let shellPos = [0, 0, 0];
-      let shellVel = [0, 0, 0];
-      const gravity = 9.8 * 0.3;
+      const gravity = 9.8 * 0.06;
       const initialSpeed = 3.0;
-      let M_barrel_glob = new Float32Array(16); // 전역 배럴 매트릭스
+      let M_barrel_glob = new Float32Array(16);
 
-      function updateShell() {
-        if (shellLaunched && !shellPaused) {
-          let dt = 1 / 60;
-          shellVel[1] -= gravity * dt;
-          shellPos[0] += shellVel[0] * dt;
-          shellPos[1] += shellVel[1] * dt;
-          shellPos[2] += shellVel[2] * dt;
-          if (shellPos[1] < 0) {
-            shellPos[1] = 0;
-            shellVel = [0, 0, 0];
+      function updateAllShells() {
+        let dt = 1 / 60;
+        for (let shell of shells) {
+          if (!shell.alive) continue;
+
+          shell.vel[1] -= gravity * dt;
+          shell.pos[0] += shell.vel[0] * dt;
+          shell.pos[1] += shell.vel[1] * dt;
+          shell.pos[2] += shell.vel[2] * dt;
+
+          if (shell.pos[1] < 0) {
+            shell.pos[1] = 0;
+            shell.alive = false;
           }
         }
       }
@@ -713,10 +712,6 @@
 
         // 탱크 로딩
         const meshData = await loadAllMeshesFromGLTF(device, "models/tank.glb");
-        // const shellData = await loadAllMeshesFromGLTF(
-        //   device,
-        //   "models/88mm_shell.glb"
-        // );
         const shellData = await loadOBJAsMeshes(device, "models/shell.obj");
 
         // 텍스처 로딩
@@ -757,22 +752,33 @@
           size: 64,
           usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
+
         const modelBuffer = device.createBuffer({
           size: 64,
           usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
+        const modelBuffer_turret = device.createBuffer({
+          size: 64,
+          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+        const modelBuffer_barrel = device.createBuffer({
+          size: 64,
+          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
         const normalMatrixBuffer = device.createBuffer({
           size: 64,
           usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
-        const modelBufferShell = device.createBuffer({
+        const normalMatrixBuffer_turret = device.createBuffer({
           size: 64,
           usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
-        const normalMatrixBufferShell = device.createBuffer({
+        const normalMatrixBuffer_barrel = device.createBuffer({
           size: 64,
           usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
+
         const lightBuffer = device.createBuffer({
           size: 12,
           usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -800,6 +806,45 @@
           let invT = mat4.transpose(inv);
 
           return invT; // Float32Array(16)
+        }
+
+        const shells = [];
+
+        // shell을 spawn할 때마다 UBO를 따로 만들어둠
+        function spawnShell(initialPos, initialVel) {
+          let shell = {
+            pos: [...initialPos],
+            vel: [...initialVel],
+            alive: true,
+
+            modelBuffer: device.createBuffer({
+              size: 64,
+              usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+            }),
+            normalMatrixBuffer: device.createBuffer({
+              size: 64,
+              usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+            }),
+          };
+
+          // 이제 shell.modelBuffer, shell.normalMatrixBuffer 등이 준비된 뒤,
+          // bindGroup을 만든다:
+          shell.bindGroup = device.createBindGroup({
+            layout: pipelineShell.getBindGroupLayout(0),
+            entries: [
+              { binding: 0, resource: { buffer: sceneBuffer } },
+              { binding: 1, resource: { buffer: shell.modelBuffer } },
+              { binding: 2, resource: { buffer: shell.normalMatrixBuffer } },
+              { binding: 3, resource: { buffer: lightBuffer } },
+              { binding: 4, resource: shellColor.createView() },
+              { binding: 5, resource: shellEtc.createView() },
+              { binding: 6, resource: shellNormal.createView() },
+              { binding: 7, resource: sampler },
+              { binding: 8, resource: { buffer: partIDBuffer_Shell } },
+            ],
+          });
+
+          shells.push(shell);
         }
 
         // partIDs: 0=body,1=turret,2=innerWheel,3=outerWheel,4=barrel,5=shell
@@ -833,6 +878,22 @@
           preferredFormat
         );
 
+        const pipelineTurret = createRenderPipeline(
+          device,
+          vertexModule,
+          fragmentModule,
+          "depth24plus",
+          preferredFormat
+        );
+
+        const pipelineBarrel = createRenderPipeline(
+          device,
+          vertexModule,
+          fragmentModule,
+          "depth24plus",
+          preferredFormat
+        );
+
         function createBindGroup(colorTex, etcTex, normalTex, partIDBuf) {
           return device.createBindGroup({
             layout: pipeline.getBindGroupLayout(0),
@@ -850,35 +911,26 @@
           });
         }
 
-        function createShellBindGroup(colorTex, etcTex, normalTex, partIDBuf) {
-          return device.createBindGroup({
-            layout: pipelineShell.getBindGroupLayout(0),
-            entries: [
-              { binding: 0, resource: { buffer: sceneBuffer } },
-              { binding: 1, resource: { buffer: modelBufferShell } },
-              { binding: 2, resource: { buffer: normalMatrixBufferShell } },
-              { binding: 3, resource: { buffer: lightBuffer } },
-              { binding: 4, resource: colorTex.createView() },
-              { binding: 5, resource: etcTex.createView() },
-              { binding: 6, resource: normalTex.createView() },
-              { binding: 7, resource: sampler },
-              { binding: 8, resource: { buffer: partIDBuf } },
-            ],
-          });
-        }
-
         const bindGroup_Body = createBindGroup(
           tankColor,
           tankEtc,
           tankNormal,
           partIDBuffer_Body
         );
-        const bindGroup_Turret = createBindGroup(
-          tankColor,
-          tankEtc,
-          tankNormal,
-          partIDBuffer_Turret
-        );
+        const bindGroup_Turret = device.createBindGroup({
+          layout: pipelineTurret.getBindGroupLayout(0),
+          entries: [
+            { binding: 0, resource: { buffer: sceneBuffer } },
+            { binding: 1, resource: { buffer: modelBuffer_turret } },
+            { binding: 2, resource: { buffer: normalMatrixBuffer_turret } },
+            { binding: 3, resource: { buffer: lightBuffer } },
+            { binding: 4, resource: tankColor.createView() },
+            { binding: 5, resource: tankEtc.createView() },
+            { binding: 6, resource: tankNormal.createView() },
+            { binding: 7, resource: sampler },
+            { binding: 8, resource: { buffer: partIDBuffer_Turret } },
+          ],
+        });
         const bindGroup_InnerWheel = createBindGroup(
           tankColor,
           tankEtc,
@@ -891,44 +943,46 @@
           tankNormal,
           partIDBuffer_OuterWheel
         );
-        const bindGroup_Barrel = createBindGroup(
-          tankColor,
-          tankEtc,
-          tankNormal,
-          partIDBuffer_Barrel
-        );
-        const bindGroup_Shell = createShellBindGroup(
-          shellColor,
-          shellEtc,
-          shellNormal,
-          partIDBuffer_Shell
-        );
+        const bindGroup_Barrel = device.createBindGroup({
+          layout: pipelineBarrel.getBindGroupLayout(0),
+          entries: [
+            { binding: 0, resource: { buffer: sceneBuffer } },
+            { binding: 1, resource: { buffer: modelBuffer_barrel } },
+            { binding: 2, resource: { buffer: normalMatrixBuffer_barrel } },
+            { binding: 3, resource: { buffer: lightBuffer } },
+            { binding: 4, resource: tankColor.createView() },
+            { binding: 5, resource: tankEtc.createView() },
+            { binding: 6, resource: tankNormal.createView() },
+            { binding: 7, resource: sampler },
+            { binding: 8, resource: { buffer: partIDBuffer_Barrel } },
+          ],
+        });
 
         // 그리드와 로컬 축 파이프라인
         const gridVertexCode = `
-      @group(0) @binding(0) var<uniform> sceneUniform: mat4x4<f32>;
+            @group(0) @binding(0) var<uniform> sceneUniform: mat4x4<f32>;
 
-      struct VertexInput {
-        @location(0) position: vec3<f32>,
-        @location(1) color: vec3<f32>,
-      };
-      struct VertexOutput {
-        @builtin(position) position: vec4<f32>,
-        @location(0) color: vec3<f32>,
-      };
+            struct VertexInput {
+              @location(0) position: vec3<f32>,
+              @location(1) color: vec3<f32>,
+            };
+            struct VertexOutput {
+              @builtin(position) position: vec4<f32>,
+              @location(0) color: vec3<f32>,
+            };
 
-      @vertex
-      fn main(input:VertexInput)->VertexOutput{
-        var output:VertexOutput;
-        output.position=sceneUniform*vec4<f32>(input.position,1.0);
-        output.color=input.color;
-        return output;
-      }
+            @vertex
+            fn main(input:VertexInput)->VertexOutput{
+              var output:VertexOutput;
+              output.position=sceneUniform*vec4<f32>(input.position,1.0);
+              output.color=input.color;
+              return output;
+            }
 
-      @fragment
-      fn fs_main(input:VertexOutput)->@location(0) vec4<f32>{
-        return vec4<f32>(input.color,1.0);
-      }`;
+            @fragment
+            fn fs_main(input:VertexOutput)->@location(0) vec4<f32>{
+              return vec4<f32>(input.color,1.0);
+            }`;
 
         const gridModule = device.createShaderModule({ code: gridVertexCode });
         const gridPipeline = device.createRenderPipeline({
@@ -991,37 +1045,37 @@
         });
 
         const localAxesVertexCode = `
-      @group(0) @binding(0) var<uniform> sceneUniform: mat4x4<f32>;
-      @group(0) @binding(1) var<uniform> modelMatrix: mat4x4<f32>;
+            @group(0) @binding(0) var<uniform> sceneUniform: mat4x4<f32>;
+            @group(0) @binding(1) var<uniform> modelMatrix: mat4x4<f32>;
 
-      struct VertexInput {
-          @location(0) position: vec3<f32>,
-          @location(1) color: vec3<f32>,
-      };
-      struct VertexOutput {
-          @builtin(position) position: vec4<f32>,
-          @location(0) color: vec3<f32>,
-      };
+            struct VertexInput {
+                @location(0) position: vec3<f32>,
+                @location(1) color: vec3<f32>,
+            };
+            struct VertexOutput {
+                @builtin(position) position: vec4<f32>,
+                @location(0) color: vec3<f32>,
+            };
 
-      @vertex
-      fn main(input:VertexInput)->VertexOutput{
-        var output:VertexOutput;
-        let worldPos=modelMatrix*vec4<f32>(input.position,1.0);
-        output.position=sceneUniform*worldPos;
-        output.color=input.color;
-        return output;
-      }`;
+            @vertex
+            fn main(input:VertexInput)->VertexOutput{
+              var output:VertexOutput;
+              let worldPos=modelMatrix*vec4<f32>(input.position,1.0);
+              output.position=sceneUniform*worldPos;
+              output.color=input.color;
+              return output;
+            }`;
 
         const localAxesFragmentCode = `
-      struct VertexOutput {
-          @builtin(position) position: vec4<f32>,
-          @location(0) color: vec3<f32>,
-      };
+            struct VertexOutput {
+                @builtin(position) position: vec4<f32>,
+                @location(0) color: vec3<f32>,
+            };
 
-      @fragment
-      fn fs_main(input:VertexOutput)->@location(0) vec4<f32>{
-        return vec4<f32>(input.color,1.0);
-      }`;
+            @fragment
+            fn fs_main(input:VertexOutput)->@location(0) vec4<f32>{
+              return vec4<f32>(input.color,1.0);
+            }`;
 
         const localAxesVertexModule = device.createShaderModule({
           code: localAxesVertexCode,
@@ -1089,39 +1143,48 @@
           position: [0, 0, 0],
           rotation: 0,
           turretRotation: 0,
-          barrelElevation: 0,
         };
 
-        const localPivot = [0.65, 0.87, 0];
+        let turretPivot = [0.35, 0.299, 0];
+        let barrelPivot = [0.65, 0.87, 0];
 
         function computeBarrelPivot(tankState) {
-          let cosR = Math.cos(tankState.rotation);
-          let sinR = Math.sin(tankState.rotation);
-          let length = Math.sqrt(
-            localPivot[0] * localPivot[0] + localPivot[1] * localPivot[1]
-          );
+          // A. 바디 행렬
+          let M_body = mat4.identity();
+          M_body = mat4.translate(M_body, [
+            tankState.position[0],
+            0.46,
+            tankState.position[2],
+          ]);
+          M_body = mat4.rotateY(M_body, tankState.rotation);
 
-          let worldX = tankState.position[0] + length * cosR;
-          let worldZ = tankState.position[2] - length * sinR;
+          // B. 터렛 행렬
+          let M_turret = mat4.clone(M_body);
+          // 1) 원점으로 가져오기
+          M_turret = mat4.translate(M_turret, [
+            -turretPivot[0],
+            -turretPivot[1],
+            -turretPivot[2],
+          ]);
+          // 2) 회전
+          M_turret = mat4.rotateY(M_turret, tankState.turretRotation);
+          // 3) 복귀
+          M_turret = mat4.translate(M_turret, turretPivot);
 
-          let worldY = tankState.position[1] ?? 0.0;
-          worldY += localPivot[1];
+          // C. 배럴 행렬
+          let M_barrel = mat4.clone(M_turret);
+          // 배럴이 축 상하회전이 있다면 rotateX 등 처리 (생략)
 
-          return [worldX, worldY, worldZ];
-        }
+          // D. 배럴 끝(로컬 좌표 = [+0.6, 0, 0, 1]) -> 월드
+          let localEnd = [
+            barrelPivot[0],
+            barrelPivot[1] - 0.46,
+            barrelPivot[2],
+            1,
+          ];
+          let worldEnd = vec4.transformMat4(localEnd, M_barrel);
 
-        function updateShell() {
-          if (shellLaunched && !shellPaused) {
-            let dt = 1 / 60;
-            shellVel[1] -= gravity * dt;
-            shellPos[0] += shellVel[0] * dt;
-            shellPos[1] += shellVel[1] * dt;
-            shellPos[2] += shellVel[2] * dt;
-            if (shellPos[1] < 0) {
-              shellPos[1] = 0;
-              shellVel = [0, 0, 0];
-            }
-          }
+          return [worldEnd[0], worldEnd[1], worldEnd[2]];
         }
 
         window.addEventListener("keydown", (e) => {
@@ -1161,35 +1224,54 @@
             //     tankState.barrelElevation = -0.3;
             //   break;
             case " ":
-              if (!shellLaunched && M_barrel_glob) {
-                shellLaunched = true;
-                shellPaused = false;
+              // 1) 쉘을 생성할 시작점 (배럴 피벗)
+              const barrel_pivot = computeBarrelPivot(tankState);
 
-                // // 1) 배럴 끝 (로컬 -> 월드)
-                // let localMuzzlePos = [5, 5, 0, 1]; // 약간 위로 올리고 싶으면 y=+0.1
-                // let muzzleW = vec4.transformMat4(localMuzzlePos, M_barrel_glob);
-                // shellPos = [muzzleW[0], muzzleW[1], muzzleW[2]];
-                // console.log(shellPos);
+              // 2) 탱크가 바라보는 방향 (x, z)
+              let forward_X = Math.cos(
+                tankState.rotation + tankState.turretRotation
+              );
+              let forward_Z = Math.sin(
+                tankState.rotation + tankState.turretRotation
+              );
 
-                // // 2) 배럴 방향 (로컬 -> 월드)
-                // let localFwd = [1, 0, 0, 0];
-                // let fwdW = vec4.transformMat4(localFwd, M_barrel_glob);
-                // let dx = fwdW[0],
-                //   dy = fwdW[1],
-                //   dz = fwdW[2];
-                // let len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                // if (len > 1e-6) {
-                //   dx /= len;
-                //   dy /= len;
-                //   dz /= len;
-                // }
-                // // 3) 초기 속도
-                // let speed = 3.0; // 원하시는 값
-                // shellVel = [dx * speed, dy * speed + 0.5, dz * speed];
-              }
+              // 3) 초기 속도 설정
+              let speed = 1.3;
+              let dx = forward_X * speed; // 탱크 전방으로
+              let dy = 0.12; // 살짝 위로
+              let dz = -forward_Z * speed; // 회전각에 맞춰 앞뒤 반전 주의(-)
+
+              let initialVel = [dx, dy, dz];
+
+              // 4) 쉘 스폰
+              spawnShell(
+                [barrel_pivot[0], barrel_pivot[1], barrel_pivot[2]], // 초기 위치
+                initialVel // 초기 속도
+              );
               break;
           }
         });
+
+        function updateAllShells() {
+          let dt = 1 / 60;
+          for (let shell of shells) {
+            if (!shell.alive) continue;
+
+            // 중력
+            shell.vel[1] -= gravity * dt;
+
+            // 위치 업데이트
+            shell.pos[0] += shell.vel[0] * dt;
+            shell.pos[1] += shell.vel[1] * dt;
+            shell.pos[2] += shell.vel[2] * dt;
+
+            // 바닥에 떨어진 경우
+            if (shell.pos[1] < 0) {
+              shell.pos[1] = 0;
+              shell.alive = false; // 더 이상 움직이지 않도록
+            }
+          }
+        }
 
         function drawPart(renderPass, M, bindGroup, mesh) {
           let invM = mat4.invert(M);
@@ -1209,7 +1291,7 @@
         }
 
         function renderFrame(time) {
-          updateShell();
+          updateAllShells();
 
           let M_body = mat4.identity();
           M_body = mat4.translate(M_body, [
@@ -1220,26 +1302,22 @@
           M_body = mat4.rotate(M_body, [0, 1, 0], tankState.rotation);
 
           let M_turret = mat4.clone(M_body);
+          M_turret = mat4.translate(M_turret, [
+            -turretPivot[0],
+            -turretPivot[1],
+            -turretPivot[2],
+          ]);
           M_turret = mat4.rotate(M_turret, [0, 1, 0], tankState.turretRotation);
+          M_turret = mat4.translate(M_turret, [
+            turretPivot[0],
+            turretPivot[1],
+            turretPivot[2],
+          ]);
 
-          let M_barrel = M_turret;
-          // M_barrel = mat4.rotateX(M_barrel, tankState.barrelElevation);
-          // M_barrel = mat4.translate(M_barrel, [
-          //   -barrelPivot[0],
-          //   -barrelPivot[1],
-          //   -barrelPivot[2],
-          // ]);
-
-          const barrelPivot = computeBarrelPivot(tankState);
-          for (let i = 0; i < 16; i++) M_barrel_glob[i] = barrelPivot[i];
+          let M_barrel = mat4.clone(M_turret);
 
           let M_innerWheel = M_body;
           let M_outerWheel = M_body;
-
-          let M_shell_t = mat4.identity();
-          M_shell_t = mat4.translate(M_shell_t, M_barrel_glob);
-          M_shell_t = mat4.rotate(M_shell_t, [0, 1, 0], tankState.rotation);
-          M_shell_t = mat4.scale(M_shell_t, [1.1, 1.1, 1.1]);
 
           // 라이트 설정
           const lightDir = new Float32Array([-1, 5, 5]);
@@ -1281,21 +1359,77 @@
 
           // 탱크 파츠 드로우
           drawPart(renderPass, M_body, bindGroup_Body, meshData[0]);
-          drawPart(renderPass, M_turret, bindGroup_Turret, meshData[1]);
+
+          let invM_Turret = mat4.invert(M_turret);
+          let normalMat_Turret = mat4.transpose(invM_Turret);
+          device.queue.writeBuffer(modelBuffer_turret, 0, M_turret);
+          device.queue.writeBuffer(
+            normalMatrixBuffer_turret,
+            0,
+            normalMat_Turret
+          );
+          renderPass.setPipeline(pipelineTurret);
+          renderPass.setBindGroup(0, bindGroup_Turret);
+          renderPass.setVertexBuffer(0, meshData[1].posBuffer);
+          renderPass.setVertexBuffer(1, meshData[1].normalBuffer);
+          renderPass.setVertexBuffer(2, meshData[1].uvBuffer);
+          renderPass.setVertexBuffer(3, meshData[1].tangentBuffer);
+          renderPass.setVertexBuffer(4, meshData[1].bitangentBuffer);
+          renderPass.setIndexBuffer(meshData[1].indexBuffer, "uint32");
+          renderPass.drawIndexed(meshData[1].indexCount, 1, 0, 0, 0);
+
           drawPart(renderPass, M_innerWheel, bindGroup_InnerWheel, meshData[2]);
           drawPart(renderPass, M_outerWheel, bindGroup_OuterWheel, meshData[3]);
-          drawPart(renderPass, M_barrel, bindGroup_Barrel, meshData[4]);
 
-          if (shellLaunched) {
-            device.queue.writeBuffer(modelBufferShell, 0, M_shell_t);
-            device.queue.writeBuffer(
-              normalMatrixBufferShell,
-              0,
-              someInvTransposeOf(M_shell_t)
-            );
+          let invM_Barrel = mat4.invert(M_barrel);
+          let normalMat_Barrel = mat4.transpose(invM_Barrel);
+          device.queue.writeBuffer(modelBuffer_barrel, 0, M_barrel);
+          device.queue.writeBuffer(
+            normalMatrixBuffer_barrel,
+            0,
+            normalMat_Barrel
+          );
+          renderPass.setPipeline(pipelineBarrel);
+          renderPass.setBindGroup(0, bindGroup_Barrel);
+          renderPass.setVertexBuffer(0, meshData[4].posBuffer);
+          renderPass.setVertexBuffer(1, meshData[4].normalBuffer);
+          renderPass.setVertexBuffer(2, meshData[4].uvBuffer);
+          renderPass.setVertexBuffer(3, meshData[4].tangentBuffer);
+          renderPass.setVertexBuffer(4, meshData[4].bitangentBuffer);
+          renderPass.setIndexBuffer(meshData[4].indexBuffer, "uint32");
+          renderPass.drawIndexed(meshData[4].indexCount, 1, 0, 0, 0);
+
+          for (let shell of shells) {
+            if (!shell.alive) continue;
+
+            let M_shell_t = mat4.identity();
+            M_shell_t = mat4.translate(M_shell_t, shell.pos);
+
+            let [vx, vy, vz] = shell.vel;
+            let speed = Math.sqrt(vx * vx + vy * vy + vz * vz);
+            if (speed > 1e-6) {
+              vx /= speed;
+              vy /= speed;
+              vz /= speed;
+            }
+
+            let yaw = Math.atan2(-vz, vx);
+            let pitch = Math.atan2(vy, Math.sqrt(vx * vx + vz * vz));
+
+            M_shell_t = mat4.rotate(M_shell_t, [0, 1, 0], yaw);
+            M_shell_t = mat4.rotate(M_shell_t, [0, 0, 1], pitch);
+
+            M_shell_t = mat4.scale(M_shell_t, [1.1, 1.1, 1.1]);
+
+            let M_shell_inv = mat4.invert(M_shell_t);
+            let M_shell_nrm = mat4.transpose(M_shell_inv);
+
+            device.queue.writeBuffer(shell.modelBuffer, 0, M_shell_t);
+            device.queue.writeBuffer(shell.normalMatrixBuffer, 0, M_shell_nrm);
 
             renderPass.setPipeline(pipelineShell);
-            renderPass.setBindGroup(0, bindGroup_Shell);
+            renderPass.setBindGroup(0, shell.bindGroup);
+
             renderPass.setVertexBuffer(0, shellData[0].posBuffer);
             renderPass.setVertexBuffer(1, shellData[0].normalBuffer);
             renderPass.setVertexBuffer(2, shellData[0].uvBuffer);
@@ -1305,7 +1439,6 @@
             renderPass.drawIndexed(shellData[0].indexCount, 1, 0, 0, 0);
           }
 
-          // 로컬 축
           device.queue.writeBuffer(modelBuffer, 0, M_body);
           renderPass.setPipeline(localAxesPipeline);
           renderPass.setBindGroup(0, localAxesBindGroup);
