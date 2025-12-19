@@ -2,8 +2,6 @@
 
 컴퓨터 그래픽스 실습 프로젝트 모음입니다. Three.js와 WebGPU를 사용한 인터랙티브 3D 그래픽스 구현이 포함되어 있습니다.
 
-## 프로젝트 목록
-
 ### [`Luxo`](https://github.com/i2na/Luxo-Interactive-Simulation)
 
 - **설명**: Three.js로 구현한 Luxo 램프 인터랙티브 시뮬레이션
