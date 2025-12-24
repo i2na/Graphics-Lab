@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-        <title>Project #1 - Luxo Lamp</title>
+        <title>Project #1 - Lamp</title>
         <style>
             html,
             body {
@@ -58,7 +58,7 @@
                 mesh.receiveShadow = true;
             }
 
-            // define the luxo lamp
+            // define the lamp
 
             // base container
             const base = new THREE.Object3D();
@@ -333,7 +333,7 @@
             OctahedronMesh.receiveShadow = true;
 
             //update function
-            function updateLuxo() {
+            function updateLamp() {
                 //base setting
                 base.position.y = baseMesh.height / 2;
                 baseMesh.mesh.scale.set(baseMesh.width, baseMesh.height, baseMesh.width);
@@ -415,19 +415,19 @@
                 base_folder
                     .add(base.position, "x", -room.width / 2, room.width / 2, 1)
                     .name("x")
-                    .onChange(updateLuxo);
+                    .onChange(updateLamp);
                 base_folder
                     .add(base.position, "z", -room.width / 2, room.width / 2, 1)
                     .name("z")
-                    .onChange(updateLuxo);
+                    .onChange(updateLamp);
                 base_folder
                     .add(baseMesh, "height", 0.1, 2, 0.1)
                     .name("height")
-                    .onChange(updateLuxo);
+                    .onChange(updateLamp);
                 base_folder.open();
 
                 //angle control
-                gui.add(baseDisc, "angle", 0, 360, 1).name("angle (yellow)").onChange(updateLuxo);
+                gui.add(baseDisc, "angle", 0, 360, 1).name("angle (yellow)").onChange(updateLamp);
 
                 //arm controls
                 let arm_folder;
@@ -435,11 +435,11 @@
                 arm_folder
                     .add(armLowerMesh, "height", 2, 7, 0.1)
                     .name("lower")
-                    .onChange(updateLuxo);
+                    .onChange(updateLamp);
                 arm_folder
                     .add(armUpperMesh, "height", 2, 7, 0.1)
                     .name("upper")
-                    .onChange(updateLuxo);
+                    .onChange(updateLamp);
                 arm_folder.open();
 
                 //joint controls
@@ -448,15 +448,15 @@
                 joint_folder
                     .add(jointBase, "angle", -180, 180, 1)
                     .name("base")
-                    .onChange(updateLuxo);
+                    .onChange(updateLamp);
                 joint_folder
                     .add(jointMiddle, "angle", -180, 180, 1)
                     .name("middle")
-                    .onChange(updateLuxo);
+                    .onChange(updateLamp);
                 joint_folder
                     .add(jointHead, "angle", -180, 180, 1)
                     .name("head")
-                    .onChange(updateLuxo);
+                    .onChange(updateLamp);
                 joint_folder.open();
 
                 //light bulb controls
@@ -466,12 +466,12 @@
                 lightbulb_folder
                     .add(new DegRadHelper(bulbLight.light, "angle"), "value", 10, 90)
                     .name("angle")
-                    .onChange(updateLuxo);
+                    .onChange(updateLamp);
 
                 lightbulb_folder
                     .add(bulbLight.light, "intensity", 300, 600, 1)
                     .name("bright")
-                    .onChange(updateLuxo);
+                    .onChange(updateLamp);
 
                 const lightHelperVisibility = { showLightHelper: true };
                 lightbulb_folder
@@ -479,7 +479,7 @@
                     .name("show helper")
                     .onChange(function (value) {
                         bulbLight.lightHelper.visible = value;
-                        updateLuxo();
+                        updateLamp();
                     });
 
                 lightbulb_folder.open();
