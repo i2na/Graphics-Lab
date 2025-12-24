@@ -9,34 +9,34 @@
  */
 
 export function createBindGroup(
-  device,
-  pipeline,
-  sceneBuffer,
-  modelBuffer,
-  normalMatrixBuffer,
-  lightBuffer,
-  colorTex,
-  etcTex,
-  normalTex,
-  sampler,
-  partIDBuf
+    device,
+    pipeline,
+    sceneBuffer,
+    modelBuffer,
+    normalMatrixBuffer,
+    lightBuffer,
+    colorTex,
+    etcTex,
+    normalTex,
+    sampler,
+    partIDBuf
 ) {
-  // 주어진 파이프라인에 필요한 리소스(버퍼, 텍스처 등)을 묶어
-  // 실제 렌더링 시점에 파이프라인과 연결해주는 BindGroup 생성
-  return device.createBindGroup({
-    layout: pipeline.getBindGroupLayout(0),
-    entries: [
-      { binding: 0, resource: { buffer: sceneBuffer } },
-      { binding: 1, resource: { buffer: modelBuffer } },
-      { binding: 2, resource: { buffer: normalMatrixBuffer } },
-      { binding: 3, resource: { buffer: lightBuffer } },
-      { binding: 4, resource: colorTex.createView() },
-      { binding: 5, resource: etcTex.createView() },
-      { binding: 6, resource: normalTex.createView() },
-      { binding: 7, resource: sampler },
-      { binding: 8, resource: { buffer: partIDBuf } },
-    ],
-  });
+    // 주어진 파이프라인에 필요한 리소스(버퍼, 텍스처 등)을 묶어
+    // 실제 렌더링 시점에 파이프라인과 연결해주는 BindGroup 생성
+    return device.createBindGroup({
+        layout: pipeline.getBindGroupLayout(0),
+        entries: [
+            { binding: 0, resource: { buffer: sceneBuffer } },
+            { binding: 1, resource: { buffer: modelBuffer } },
+            { binding: 2, resource: { buffer: normalMatrixBuffer } },
+            { binding: 3, resource: { buffer: lightBuffer } },
+            { binding: 4, resource: colorTex.createView() },
+            { binding: 5, resource: etcTex.createView() },
+            { binding: 6, resource: normalTex.createView() },
+            { binding: 7, resource: sampler },
+            { binding: 8, resource: { buffer: partIDBuf } },
+        ],
+    });
 }
 
 /**
@@ -44,10 +44,10 @@ export function createBindGroup(
  * - 일반적인 모델 행렬, 노말 행렬, 라이트 정보 등
  */
 export function createBuffer(device) {
-  return device.createBuffer({
-    size: 64,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-  });
+    return device.createBuffer({
+        size: 64,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
 }
 
 /**
@@ -55,12 +55,12 @@ export function createBuffer(device) {
  * - Anisotropy를 최대로 하고, 선형 필터링 등을 사용
  */
 export function createSampler(device) {
-  return device.createSampler({
-    magFilter: "linear",
-    minFilter: "linear",
-    mipmapFilter: "linear",
-    maxAnisotropy: 16,
-  });
+    return device.createSampler({
+        magFilter: "linear",
+        minFilter: "linear",
+        mipmapFilter: "linear",
+        maxAnisotropy: 16,
+    });
 }
 
 /**
@@ -68,11 +68,11 @@ export function createSampler(device) {
  * - 렌더 패스에서 depthStencilAttachment로 사용
  */
 export function createDepthTexture(device, width, height, format) {
-  return device.createTexture({
-    size: [width, height],
-    format: format,
-    usage: GPUTextureUsage.RENDER_ATTACHMENT,
-  });
+    return device.createTexture({
+        size: [width, height],
+        format: format,
+        usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
 }
 
 /**
@@ -82,57 +82,57 @@ export function createDepthTexture(device, width, height, format) {
  * - 정점 속성(포지션, 노멀, UV, 탄젠트, 바이탄젠트)을 지정
  */
 export function createRenderPipeline(
-  device,
-  vertexModule,
-  fragmentModule,
-  depthFormat,
-  preferredFormat
+    device,
+    vertexModule,
+    fragmentModule,
+    depthFormat,
+    preferredFormat
 ) {
-  return device.createRenderPipeline({
-    layout: "auto",
-    vertex: {
-      module: vertexModule,
-      entryPoint: "main",
-      buffers: [
-        // position
-        {
-          arrayStride: 4 * 3,
-          attributes: [{ shaderLocation: 0, offset: 0, format: "float32x3" }],
+    return device.createRenderPipeline({
+        layout: "auto",
+        vertex: {
+            module: vertexModule,
+            entryPoint: "main",
+            buffers: [
+                // position
+                {
+                    arrayStride: 4 * 3,
+                    attributes: [{ shaderLocation: 0, offset: 0, format: "float32x3" }],
+                },
+                // normal
+                {
+                    arrayStride: 4 * 3,
+                    attributes: [{ shaderLocation: 1, offset: 0, format: "float32x3" }],
+                },
+                // uv
+                {
+                    arrayStride: 4 * 2,
+                    attributes: [{ shaderLocation: 2, offset: 0, format: "float32x2" }],
+                },
+                // tangent
+                {
+                    arrayStride: 4 * 3,
+                    attributes: [{ shaderLocation: 3, offset: 0, format: "float32x3" }],
+                },
+                // bitangent
+                {
+                    arrayStride: 4 * 3,
+                    attributes: [{ shaderLocation: 4, offset: 0, format: "float32x3" }],
+                },
+            ],
         },
-        // normal
-        {
-          arrayStride: 4 * 3,
-          attributes: [{ shaderLocation: 1, offset: 0, format: "float32x3" }],
+        fragment: {
+            module: fragmentModule,
+            entryPoint: "main",
+            targets: [{ format: preferredFormat }],
         },
-        // uv
-        {
-          arrayStride: 4 * 2,
-          attributes: [{ shaderLocation: 2, offset: 0, format: "float32x2" }],
+        primitive: { topology: "triangle-list" },
+        depthStencil: {
+            format: depthFormat,
+            depthWriteEnabled: true,
+            depthCompare: "less",
         },
-        // tangent
-        {
-          arrayStride: 4 * 3,
-          attributes: [{ shaderLocation: 3, offset: 0, format: "float32x3" }],
-        },
-        // bitangent
-        {
-          arrayStride: 4 * 3,
-          attributes: [{ shaderLocation: 4, offset: 0, format: "float32x3" }],
-        },
-      ],
-    },
-    fragment: {
-      module: fragmentModule,
-      entryPoint: "main",
-      targets: [{ format: preferredFormat }],
-    },
-    primitive: { topology: "triangle-list" },
-    depthStencil: {
-      format: depthFormat,
-      depthWriteEnabled: true,
-      depthCompare: "less",
-    },
-  });
+    });
 }
 
 /**
@@ -140,12 +140,12 @@ export function createRenderPipeline(
  * - 각 파트에 고유 ID를 넣어 쉐이더에서 구분 가능하게 함
  */
 export function createPartIDBuffer(device, id) {
-  const buf = device.createBuffer({
-    size: 4,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: true,
-  });
-  new Uint32Array(buf.getMappedRange())[0] = id;
-  buf.unmap();
-  return buf;
+    const buf = device.createBuffer({
+        size: 4,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        mappedAtCreation: true,
+    });
+    new Uint32Array(buf.getMappedRange())[0] = id;
+    buf.unmap();
+    return buf;
 }

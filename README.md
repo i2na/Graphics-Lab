@@ -5,17 +5,17 @@
 ### [`Luxo`](https://github.com/i2na/Luxo-Interactive-Simulation)
 
 - **설명**: Three.js로 구현한 Luxo 램프 인터랙티브 시뮬레이션
-- **데모**: [https://i2na.github.io/three.js/luxo](https://i2na.github.io/three.js/luxo)
+- **데모**: [https://i2na.github.io/Graphics-Lab/luxo](https://i2na.github.io/Graphics-Lab/luxo)
 - **기술**: Three.js, WebGL
 
-### [`Hand`](https://github.com/i2na/three.js/tree/main/hand)
+### [`Hand`](https://github.com/i2na/Graphics-Lab/tree/main/hand)
 
 - **설명**: Three.js를 사용하여 인터랙티브한 손 모델 구현
-- **데모**: [https://i2na.github.io/three.js/hand](https://i2na.github.io/three.js/hand)
+- **데모**: [https://i2na.github.io/Graphics-Lab/hand](https://i2na.github.io/Graphics-Lab/hand)
 - **기술**: Three.js, WebGL
 
 ### [`Tank`](https://github.com/i2na/Tank-Interactive-Simulation)
 
 - **설명**: WebGPU 기반 탱크 씬 렌더링과 간단한 인터랙션
-- **데모**: [https://i2na.github.io/three.js/tank](https://i2na.github.io/three.js/tank)
+- **데모**: [https://i2na.github.io/Graphics-Lab/tank](https://i2na.github.io/Graphics-Lab/tank)
 - **기술**: WebGPU, WGSL, PBR Shading
